@@ -43,6 +43,10 @@ func main() {
 	if len(ver.Build) > 0 {
 		ver.Build = git.GetSha()
 	}
+	pushAnswer := utils.YesNo(fmt.Sprintf("Tag and push %s?", ver.String()), choice.Yes)
+	if pushAnswer != choice.Yes {
+		return
+	}
 	git.Tag(ver)
 	git.PushTag(ver)
 	fmt.Printf("Pushed %s", ver.String())
