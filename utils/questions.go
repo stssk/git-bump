@@ -24,13 +24,16 @@ func YesNo(question string, defaultOption choice.Choice) choice.Choice {
 	for {
 		b := getYesNoAnswer()
 		if b == 13 || b == 10 {
+			fmt.Println()
 			return defaultOption
 		}
 		r := rune(b)
 		if r == 'Y' || r == 'y' {
+			fmt.Println()
 			return choice.Yes
 		}
 		if r == 'N' || r == 'n' {
+			fmt.Println()
 			return choice.No
 		}
 	}
