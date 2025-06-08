@@ -22,7 +22,7 @@ func main() {
 	ver := git.GetLastVersion()
 	fmt.Printf("Currently on %s\n", ver.String())
 	bumpWith := utils.AskForOperation()
-	if bumpWith == operation.None {
+	if bumpWith < 0 {
 		return
 	}
 	if bumpWith == operation.PreRelease {

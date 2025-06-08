@@ -3,11 +3,10 @@ package operation
 type Operation int
 
 const (
-	None Operation = iota
-	PreRelease
+	PreRelease Operation = iota
 	Patch
 	Minor
 	Major
 )
 
-var Operations = []string{"None", "Pre release", "Patch", "Minor", "Major"}
+var Operations = []string{"Pre release", "Patch", "Minor", "Major"}

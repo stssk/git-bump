@@ -3,7 +3,6 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -11,10 +10,10 @@ import (
 	"github.com/AlecAivazis/survey/v2"
 	"github.com/stssk/git-bump/utils/choice"
 	"github.com/stssk/git-bump/utils/operation"
+	"golang.org/x/term"
 )
 
 func YesNo(question string, defaultOption choice.Choice) choice.Choice {
-	reader := bufio.NewReader(os.Stdin)
 	if defaultOption == choice.Yes {
 		fmt.Printf("%s [Y/n] ", question)
 	} else if defaultOption == choice.No {
@@ -22,17 +21,36 @@ func YesNo(question string, defaultOption choice.Choice) choice.Choice {
 	} else {
 		fmt.Printf("%s [y/n] ", question)
 	}
-	r, _, err := reader.ReadRune()
+	for {
+		b := getYesNoAnswer()
+		if b == 13 || b == 10 {
+			return defaultOption
+		}
+		r := rune(b)
+		if r == 'Y' || r == 'y' {
+			return choice.Yes
+		}
+		if r == 'N' || r == 'n' {
+			return choice.No
+		}
+	}
+}
+
+func getYesNoAnswer() byte {
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
-		log.Fatalln(err)
+		panic("Failed to initialise terminal")
 	}
-	if r == 'Y' || r == 'y' {
-		return choice.Yes
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	b := make([]byte, 1)
+	_, err = os.Stdin.Read(b)
+	if err != nil {
+		panic("Could not read keyboard")
 	}
-	if r == 'N' || r == 'n' {
-		return choice.No
+	if b[0] == 3 {
+		os.Exit(0)
 	}
-	return defaultOption
+	return b[0]
 }
 
 func AskForOperation() operation.Operation {
@@ -41,7 +59,7 @@ func AskForOperation() operation.Operation {
 		Options: operation.Operations,
 	}
 
-	answer := 0
+	answer := -1
 	survey.AskOne(promptRuns, &answer, survey.WithValidator(survey.Required))
 	return operation.Operation(answer)
 }
