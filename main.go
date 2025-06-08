@@ -35,9 +35,12 @@ func main() {
 		ver.PreRelease = ""
 	} else if bumpWith == operation.Minor {
 		ver.Minor += 1
+		ver.Patch = 0
 		ver.PreRelease = ""
 	} else if bumpWith == operation.Major {
 		ver.Major += 1
+		ver.Minor = 0
+		ver.Patch = 0
 		ver.PreRelease = ""
 	}
 	if len(ver.Build) > 0 {
