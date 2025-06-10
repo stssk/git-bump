@@ -52,5 +52,5 @@ func main() {
 	}
 	git.Tag(ver)
 	git.PushTag(ver)
-	fmt.Printf("Pushed %s", ver.String())
+	fmt.Printf("Pushed %s\n", ver.String())
 }
