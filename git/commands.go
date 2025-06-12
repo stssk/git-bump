@@ -82,4 +82,10 @@ func PushTag(version versioninfo.VersionInfo) {
 		os.Exit(3)
 	}
 	cmd = exec.Command("git", "push", string(remote), version.String())
+	res, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Could not push %s to %s: %s\n", version.String(), remote, err)
+		os.Exit(3)
+	}
+	fmt.Println(string(res))
 }
