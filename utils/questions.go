@@ -1,3 +1,4 @@
+// Package utils Contains questions for the user and the typed restuls
 package utils
 
 import (
@@ -14,11 +15,12 @@ import (
 )
 
 func YesNo(question string, defaultOption choice.Choice) choice.Choice {
-	if defaultOption == choice.Yes {
+	switch defaultOption {
+	case choice.Yes:
 		fmt.Printf("%s [Y/n] ", question)
-	} else if defaultOption == choice.No {
+	case choice.No:
 		fmt.Printf("%s [y/N] ", question)
-	} else {
+	default:
 		fmt.Printf("%s [y/n] ", question)
 	}
 	for {

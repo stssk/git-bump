@@ -1,3 +1,4 @@
+// Package git contains any git command used by the program and execution of the git commands
 package git
 
 import (
@@ -38,21 +39,21 @@ func GetLastVersion() versioninfo.VersionInfo {
 	}
 	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
 
-	var highestVersion versioninfo.VersionInfo
+	var highestVersion *versioninfo.VersionInfo
 	for _, tag := range tags {
 		valid, info := versioninfo.ParseSemver(tag)
 		if !valid {
 			continue
 		}
-		if highestVersion.Prefix == "" {
-			highestVersion = info
+		if highestVersion == nil {
+			highestVersion = &info
 		} else {
-			if info.Compare(highestVersion) > 0 {
-				highestVersion = info
+			if info.Compare(*highestVersion) > 0 {
+				highestVersion = &info
 			}
 		}
 	}
-	return highestVersion
+	return *highestVersion
 }
 
 func GetSha() string {

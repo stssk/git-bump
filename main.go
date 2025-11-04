@@ -25,19 +25,20 @@ func main() {
 	if bumpWith < 0 {
 		return
 	}
-	if bumpWith == operation.PreRelease {
+	switch bumpWith {
+	case operation.PreRelease:
 		if len(ver.PreRelease) == 0 {
 			ver.Patch += 1
 		}
 		ver.PreRelease = utils.AskForPreReleaseVersion()
-	} else if bumpWith == operation.Patch {
+	case operation.Patch:
 		ver.Patch += 1
 		ver.PreRelease = ""
-	} else if bumpWith == operation.Minor {
+	case operation.Minor:
 		ver.Minor += 1
 		ver.Patch = 0
 		ver.PreRelease = ""
-	} else if bumpWith == operation.Major {
+	case operation.Major:
 		ver.Major += 1
 		ver.Minor = 0
 		ver.Patch = 0

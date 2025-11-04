@@ -1,3 +1,4 @@
+// Package operation for the user selection of what to bump
 package operation
 
 type Operation int

@@ -1,3 +1,4 @@
+// Package versioninfo contains the version info object that is serialised from the version tags
 package versioninfo
 
 import (

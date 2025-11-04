@@ -7,7 +7,7 @@ import (
 
 func ParseSemver(version string) (bool, VersionInfo) {
 	// Regular expression to match a semantic version with optional prefix, pre-release, and build metadata
-	semverRegex := `^([a-zA-Z])?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`
+	semverRegex := `^([a-zA-Z]*)?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$`
 	re := regexp.MustCompile(semverRegex)
 	matches := re.FindStringSubmatch(version)
 
