@@ -20,6 +20,16 @@ func GitInstalled() string {
 	return string(output)
 }
 
+func HeadTagged() string {
+	cmd := exec.Command("git", "tag", "--points-at", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Could not check tags")
+		os.Exit(5)
+	}
+	return strings.TrimSpace(string(output))
+}
+
 func CurrentBranch() string {
 	cmd := exec.Command("git", "branch", "--show-current")
 	output, err := cmd.Output()
@@ -82,11 +92,11 @@ func PushTag(version versioninfo.VersionInfo) {
 		fmt.Println("Could not get remote name")
 		os.Exit(3)
 	}
-	cmd = exec.Command("git", "push", string(remote), version.String())
-	res, err := cmd.Output()
+	remoteName := strings.TrimSpace(string(remote))
+	cmd = exec.Command("git", "push", remoteName, version.String())
+	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("Could not push %s to %s: %s\n", version.String(), remote, err)
-		os.Exit(3)
+		fmt.Printf("Could not push %s to %s: %s\n", version.String(), remoteName, err)
+		os.Exit(4)
 	}
-	fmt.Println(string(res))
 }

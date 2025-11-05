@@ -14,6 +14,8 @@ import (
 	"golang.org/x/term"
 )
 
+const invalidAnswer = -99
+
 func YesNo(question string, defaultOption choice.Choice) choice.Choice {
 	switch defaultOption {
 	case choice.Yes:
@@ -58,14 +60,21 @@ func getYesNoAnswer() byte {
 	return b[0]
 }
 
-func AskForOperation() operation.Operation {
+func AskForOperation(usePreRelease *bool) operation.Operation {
+	ops := operation.Operations
+	if !*usePreRelease {
+		ops = ops[1:]
+	}
 	promptRuns := &survey.Select{
 		Message: "Bump with",
-		Options: operation.Operations,
+		Options: ops,
 	}
 
-	answer := -1
+	answer := invalidAnswer
 	survey.AskOne(promptRuns, &answer, survey.WithValidator(survey.Required))
+	if !*usePreRelease {
+		return operation.Operation(answer + 1)
+	}
 	return operation.Operation(answer)
 }
 
