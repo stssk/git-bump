@@ -40,7 +40,7 @@ func CurrentBranch() string {
 	return strings.TrimSpace(string(output))
 }
 
-func GetLastVersion() versioninfo.VersionInfo {
+func GetLastVersion() (versioninfo.VersionInfo, bool) {
 	cmd := exec.Command("git", "tag", "--list")
 	output, err := cmd.Output()
 	if err != nil {
@@ -63,7 +63,10 @@ func GetLastVersion() versioninfo.VersionInfo {
 			}
 		}
 	}
-	return *highestVersion
+	if highestVersion == nil {
+		return versioninfo.VersionInfo{}, false
+	}
+	return *highestVersion, true
 }
 
 func GetSha() string {

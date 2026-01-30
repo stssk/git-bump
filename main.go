@@ -8,6 +8,7 @@ import (
 	"github.com/stssk/git-bump/utils"
 	"github.com/stssk/git-bump/utils/choice"
 	"github.com/stssk/git-bump/utils/operation"
+	"github.com/stssk/git-bump/versioninfo"
 )
 
 func main() {
@@ -32,7 +33,15 @@ func main() {
 			return
 		}
 	}
-	ver := git.GetLastVersion()
+	ver, hasTags := git.GetLastVersion()
+	if !hasTags {
+		fmt.Println("is not tagged")
+		ver = versioninfo.VersionInfo{
+			Major: 0,
+			Minor: 0,
+			Patch: 0,
+		}
+	}
 	fmt.Printf("Currently on %s\n", ver.String())
 	bumpWith := utils.AskForOperation(usePreRelease)
 	if bumpWith < 0 {
