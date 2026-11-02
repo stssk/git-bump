@@ -53,3 +53,31 @@ func TestTagCreatesTag(t *testing.T) {
 		t.Fatalf("tags = %q, want v1.2.3", got)
 	}
 }
+
+func TestGetLastVersionIgnoresTagsOutsideHistory(t *testing.T) {
+	newRepo(t)
+	run(t, "tag", "v1.0.0")
+
+	// A tag on a commit that is not part of HEAD's history, as when tags
+	// are fetched from a fork.
+	run(t, "checkout", "-q", "-b", "fork")
+	run(t, "commit", "-q", "--allow-empty", "-m", "fork commit")
+	run(t, "tag", "v99.0.0")
+	run(t, "checkout", "-q", "main")
+
+	got, found := GetLastVersion("", false)
+	if !found || got.String() != "v1.0.0" {
+		t.Fatalf("GetLastVersion() = %s, %v; want v1.0.0, true", got.String(), found)
+	}
+}
+
+func TestGetLastVersionWithPrefix(t *testing.T) {
+	newRepo(t)
+	run(t, "tag", "v1.4.2")
+	run(t, "tag", "x99.0.0")
+
+	got, found := GetLastVersion("v", true)
+	if !found || got.String() != "v1.4.2" {
+		t.Fatalf("GetLastVersion(\"v\") = %s, %v; want v1.4.2, true", got.String(), found)
+	}
+}

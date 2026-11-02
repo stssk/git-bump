@@ -40,33 +40,23 @@ func CurrentBranch() string {
 	return strings.TrimSpace(string(output))
 }
 
-func GetLastVersion() (versioninfo.VersionInfo, bool) {
-	cmd := exec.Command("git", "tag", "--list")
+// GetLastVersion returns the highest version tag reachable from HEAD. Tags on
+// commits outside the current history (e.g. fetched from a fork) are ignored.
+// See versioninfo.Highest for how prefix and prefixSet are used.
+func GetLastVersion(prefix string, prefixSet bool) (versioninfo.VersionInfo, bool) {
+	cmd := exec.Command("git", "tag", "--list", "--merged", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
 		fmt.Println("Could not fetch version tags")
 		os.Exit(2)
 	}
 	tags := strings.Split(strings.TrimSpace(string(output)), "\n")
-
-	var highestVersion *versioninfo.VersionInfo
-	for _, tag := range tags {
-		valid, info := versioninfo.ParseSemver(tag)
-		if !valid {
-			continue
-		}
-		if highestVersion == nil {
-			highestVersion = &info
-		} else {
-			if info.Compare(*highestVersion) > 0 {
-				highestVersion = &info
-			}
-		}
+	version, found, err := versioninfo.Highest(tags, prefix, prefixSet)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
 	}
-	if highestVersion == nil {
-		return versioninfo.VersionInfo{}, false
-	}
-	return *highestVersion, true
+	return version, found
 }
 
 func GetSha() string {
