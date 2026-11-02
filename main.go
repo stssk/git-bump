@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -55,10 +56,9 @@ func main() {
 		}
 	}
 	fmt.Printf("Currently on %s\n", ver.String())
-	bumpWith := utils.AskForOperation(usePreRelease)
-	if bumpWith < 0 {
-		return
-	}
+	prompter := utils.NewPrompter()
+	bumpWith, err := utils.AskForOperation(prompter, *usePreRelease)
+	exitOnPromptError(err)
 	switch bumpWith {
 	case operation.PreRelease:
 		if len(ver.PreRelease) == 0 {
@@ -104,4 +104,15 @@ func main() {
 		git.PushTag(ver, remote)
 		fmt.Printf("Pushed %s to %s\n", ver.String(), remote)
 	}
+}
+
+func exitOnPromptError(err error) {
+	if err == nil {
+		return
+	}
+	if errors.Is(err, utils.ErrAborted) {
+		os.Exit(130)
+	}
+	fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
 }

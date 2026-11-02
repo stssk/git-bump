@@ -9,13 +9,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlecAivazis/survey/v2"
 	"github.com/stssk/git-bump/utils/choice"
 	"github.com/stssk/git-bump/utils/operation"
 	"golang.org/x/term"
 )
-
-const invalidAnswer = -99
 
 func YesNo(question string, defaultOption choice.Choice) choice.Choice {
 	switch defaultOption {
@@ -61,22 +58,20 @@ func getYesNoAnswer() byte {
 	return b[0]
 }
 
-func AskForOperation(usePreRelease *bool) operation.Operation {
-	ops := operation.Operations
-	if !*usePreRelease {
-		ops = ops[1:]
+func AskForOperation(p Prompter, usePreRelease bool) (operation.Operation, error) {
+	ops := []operation.Operation{operation.Patch, operation.Minor, operation.Major}
+	if usePreRelease {
+		ops = append([]operation.Operation{operation.PreRelease}, ops...)
 	}
-	promptRuns := &survey.Select{
-		Message: "Bump with",
-		Options: ops,
+	labels := make([]string, len(ops))
+	for i, op := range ops {
+		labels[i] = operation.Operations[op]
 	}
-
-	answer := invalidAnswer
-	survey.AskOne(promptRuns, &answer, survey.WithValidator(survey.Required))
-	if !*usePreRelease {
-		return operation.Operation(answer + 1)
+	i, err := p.Select("Bump with", labels)
+	if err != nil {
+		return 0, err
 	}
-	return operation.Operation(answer)
+	return ops[i], nil
 }
 
 var preReleaseRegex = regexp.MustCompile(`^[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*$`)
