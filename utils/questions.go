@@ -9,54 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/stssk/git-bump/utils/choice"
 	"github.com/stssk/git-bump/utils/operation"
-	"golang.org/x/term"
 )
-
-func YesNo(question string, defaultOption choice.Choice) choice.Choice {
-	switch defaultOption {
-	case choice.Yes:
-		fmt.Printf("%s [Y/n] ", question)
-	case choice.No:
-		fmt.Printf("%s [y/N] ", question)
-	default:
-		fmt.Printf("%s [y/n] ", question)
-	}
-	for {
-		b := getYesNoAnswer()
-		if b == 13 || b == 10 {
-			fmt.Println()
-			return defaultOption
-		}
-		r := rune(b)
-		if r == 'Y' || r == 'y' {
-			fmt.Println()
-			return choice.Yes
-		}
-		if r == 'N' || r == 'n' {
-			fmt.Println()
-			return choice.No
-		}
-	}
-}
-
-func getYesNoAnswer() byte {
-	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	if err != nil {
-		panic("Failed to initialise terminal")
-	}
-	defer term.Restore(int(os.Stdin.Fd()), oldState)
-	b := make([]byte, 1)
-	_, err = os.Stdin.Read(b)
-	if err != nil {
-		panic("Could not read keyboard")
-	}
-	if b[0] == 3 {
-		os.Exit(0)
-	}
-	return b[0]
-}
 
 func AskForOperation(p Prompter, usePreRelease bool) (operation.Operation, error) {
 	ops := []operation.Operation{operation.Patch, operation.Minor, operation.Major}

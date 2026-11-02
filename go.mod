@@ -2,10 +2,7 @@ module github.com/stssk/git-bump
 
 go 1.26.0
 
-require (
-	charm.land/huh/v2 v2.0.3
-	golang.org/x/term v0.47.0
-)
+require charm.land/huh/v2 v2.0.3
 
 require (
 	charm.land/bubbles/v2 v2.0.0 // indirect
