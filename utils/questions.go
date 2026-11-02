@@ -79,12 +79,8 @@ func AskForOperation(usePreRelease *bool) operation.Operation {
 	return operation.Operation(answer)
 }
 
-// preReleaseRegex matches a semver pre-release: dot-separated, non-empty
-// identifiers of [0-9A-Za-z-]. It is the same rule versioninfo.ParseSemver
-// uses, so an accepted value always produces a tag that parses again.
 var preReleaseRegex = regexp.MustCompile(`^[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*$`)
 
-// ValidPreRelease reports whether s is a valid pre-release identifier.
 func ValidPreRelease(s string) bool {
 	return preReleaseRegex.MatchString(s)
 }
@@ -97,7 +93,6 @@ func AskForPreReleaseVersion() string {
 	return preRelease
 }
 
-// readPreRelease prompts until a valid pre-release is entered.
 func readPreRelease(r *bufio.Reader, w io.Writer) (string, error) {
 	for {
 		fmt.Fprint(w, "Pre release version:")

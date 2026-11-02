@@ -11,8 +11,6 @@ import (
 	"github.com/stssk/git-bump/versioninfo"
 )
 
-// newRepo creates an empty git repository with one commit in a temp dir and
-// makes it the working directory for the rest of the test.
 func newRepo(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
@@ -36,7 +34,6 @@ func run(t *testing.T, args ...string) string {
 }
 
 func TestTagArgsSeparateNameFromOptions(t *testing.T) {
-	// A version that would start with "-" must still come after "--".
 	v := versioninfo.VersionInfo{Major: -1}
 	for _, kind := range []TagKind{Lightweight, Annotated, Signed} {
 		args := tagArgs(v, kind)
@@ -105,15 +102,13 @@ func TestTagCreatesSignedTag(t *testing.T) {
 	run(t, "config", "gpg.ssh.allowedSignersFile", allowed)
 
 	Tag(versioninfo.VersionInfo{Prefix: "v", Major: 3}, Signed)
-	run(t, "tag", "-v", "v3.0.0") // fails the test if the signature does not verify
+	run(t, "tag", "-v", "v3.0.0")
 }
 
 func TestGetLastVersionIgnoresTagsOutsideHistory(t *testing.T) {
 	newRepo(t)
 	run(t, "tag", "v1.0.0")
 
-	// A tag on a commit that is not part of HEAD's history, as when tags
-	// are fetched from a fork.
 	run(t, "checkout", "-q", "-b", "fork")
 	run(t, "commit", "-q", "--allow-empty", "-m", "fork commit")
 	run(t, "tag", "v99.0.0")

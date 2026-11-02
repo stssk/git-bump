@@ -37,9 +37,7 @@ func ParseSemver(version string) (bool, VersionInfo) {
 	}
 }
 
-// parseComponent parses a major/minor/patch number. Values that do not fit in
-// an int are rejected, as is math.MaxInt itself, so that every accepted
-// component can be incremented without overflowing into a negative number.
+// MaxInt is rejected too, so every accepted component can be bumped without overflowing.
 func parseComponent(s string) (int, bool) {
 	n, err := strconv.Atoi(s)
 	if err != nil || n == math.MaxInt {

@@ -40,9 +40,6 @@ func CurrentBranch() string {
 	return strings.TrimSpace(string(output))
 }
 
-// GetLastVersion returns the highest version tag reachable from HEAD. Tags on
-// commits outside the current history (e.g. fetched from a fork) are ignored.
-// See versioninfo.Highest for how prefix and prefixSet are used.
 func GetLastVersion(prefix string, prefixSet bool) (versioninfo.VersionInfo, bool) {
 	cmd := exec.Command("git", "tag", "--list", "--merged", "HEAD")
 	output, err := cmd.Output()
@@ -69,7 +66,6 @@ func GetSha() string {
 	return strings.TrimSpace(string(output))
 }
 
-// TagKind selects what kind of tag Tag creates.
 type TagKind int
 
 const (
@@ -78,8 +74,7 @@ const (
 	Signed
 )
 
-// tagArgs builds the arguments for creating a tag. The "--" ensures the tag
-// name is never interpreted as an option, even if it starts with "-".
+// "--" stops a tag name starting with "-" from being read as an option.
 func tagArgs(version versioninfo.VersionInfo, kind TagKind) []string {
 	name := version.String()
 	args := []string{"tag"}
@@ -101,7 +96,6 @@ func Tag(version versioninfo.VersionInfo, kind TagKind) {
 	}
 }
 
-// configValue returns a git config value, or "" if it is not set.
 func configValue(key string) string {
 	output, err := exec.Command("git", "config", "--get", key).Output()
 	if err != nil {
@@ -110,7 +104,6 @@ func configValue(key string) string {
 	return strings.TrimSpace(string(output))
 }
 
-// remotes returns the names of all configured remotes.
 func remotes() ([]string, error) {
 	output, err := exec.Command("git", "remote").Output()
 	if err != nil {
@@ -119,10 +112,6 @@ func remotes() ([]string, error) {
 	return strings.Fields(string(output)), nil
 }
 
-// PushRemote decides which remote to push tags to, in the same order git push
-// does: the override (from -remote), branch.<branch>.pushRemote,
-// remote.pushDefault, branch.<branch>.remote, and finally the only remote if
-// exactly one is configured. The result must be a configured remote.
 func PushRemote(branch, override string) (string, error) {
 	configured, err := remotes()
 	if err != nil {

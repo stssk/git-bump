@@ -6,13 +6,6 @@ import (
 	"strings"
 )
 
-// Highest returns the highest semantic version among tags.
-//
-// If prefixSet is true, only tags with exactly that prefix are considered.
-// Otherwise all version tags must share a single prefix; if they don't, an
-// error is returned rather than guessing, since a stray tag with a different
-// prefix (e.g. "x99.0.0" next to "v1.4.2") would otherwise decide the next
-// version.
 func Highest(tags []string, prefix string, prefixSet bool) (VersionInfo, bool, error) {
 	var highest *VersionInfo
 	prefixes := map[string]bool{}
