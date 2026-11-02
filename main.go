@@ -65,7 +65,8 @@ func main() {
 		if len(ver.PreRelease) == 0 {
 			ver.Patch += 1
 		}
-		ver.PreRelease = utils.AskForPreReleaseVersion()
+		ver.PreRelease, err = utils.AskForPreReleaseVersion(prompter)
+		exitOnPromptError(err)
 	case operation.Patch:
 		ver.Patch += 1
 		ver.PreRelease = ""

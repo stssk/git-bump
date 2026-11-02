@@ -11,6 +11,7 @@ var ErrAborted = errors.New("aborted")
 type Prompter interface {
 	Select(title string, options []string) (int, error)
 	Confirm(question string, defaultYes bool) (bool, error)
+	Input(title string, validate func(string) error) (string, error)
 }
 
 func NewPrompter() Prompter {
@@ -32,6 +33,12 @@ func (huhPrompter) Select(title string, options []string) (int, error) {
 func (huhPrompter) Confirm(question string, defaultYes bool) (bool, error) {
 	answer := defaultYes
 	err := runField(huh.NewConfirm().Title(question).Affirmative("Yes").Negative("No").Value(&answer))
+	return answer, err
+}
+
+func (huhPrompter) Input(title string, validate func(string) error) (string, error) {
+	var answer string
+	err := runField(huh.NewInput().Title(title).Validate(validate).Value(&answer))
 	return answer, err
 }
 
