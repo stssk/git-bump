@@ -101,18 +101,70 @@ func Tag(version versioninfo.VersionInfo, kind TagKind) {
 	}
 }
 
-func PushTag(version versioninfo.VersionInfo) {
-	cmd := exec.Command("git", "remote")
-	remote, err := cmd.Output()
-	if err != nil || len(remote) == 0 {
-		fmt.Println("Could not get remote name")
-		os.Exit(3)
-	}
-	remoteName := strings.TrimSpace(string(remote))
-	cmd = exec.Command("git", "push", remoteName, version.String())
-	err = cmd.Run()
+// configValue returns a git config value, or "" if it is not set.
+func configValue(key string) string {
+	output, err := exec.Command("git", "config", "--get", key).Output()
 	if err != nil {
-		fmt.Printf("Could not push %s to %s: %s\n", version.String(), remoteName, err)
+		return ""
+	}
+	return strings.TrimSpace(string(output))
+}
+
+// remotes returns the names of all configured remotes.
+func remotes() ([]string, error) {
+	output, err := exec.Command("git", "remote").Output()
+	if err != nil {
+		return nil, err
+	}
+	return strings.Fields(string(output)), nil
+}
+
+// PushRemote decides which remote to push tags to, in the same order git push
+// does: the override (from -remote), branch.<branch>.pushRemote,
+// remote.pushDefault, branch.<branch>.remote, and finally the only remote if
+// exactly one is configured. The result must be a configured remote.
+func PushRemote(branch, override string) (string, error) {
+	configured, err := remotes()
+	if err != nil {
+		return "", fmt.Errorf("could not list remotes: %w", err)
+	}
+	if len(configured) == 0 {
+		return "", fmt.Errorf("no remotes configured")
+	}
+
+	candidate := override
+	if candidate == "" && branch != "" {
+		candidate = configValue("branch." + branch + ".pushRemote")
+	}
+	if candidate == "" {
+		candidate = configValue("remote.pushDefault")
+	}
+	if candidate == "" && branch != "" {
+		candidate = configValue("branch." + branch + ".remote")
+	}
+	if candidate == "" {
+		if len(configured) != 1 {
+			return "", fmt.Errorf("several remotes configured (%s); choose one with -remote", strings.Join(configured, ", "))
+		}
+		candidate = configured[0]
+	}
+	for _, r := range configured {
+		if r == candidate {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("%q is not a configured remote (have: %s)", candidate, strings.Join(configured, ", "))
+}
+
+func pushArgs(remote string, version versioninfo.VersionInfo) []string {
+	return []string{"push", "--", remote, version.String()}
+}
+
+func PushTag(version versioninfo.VersionInfo, remote string) {
+	cmd := exec.Command("git", pushArgs(remote, version)...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("Could not push %s to %s: %s\n%s\n", version.String(), remote, err, strings.TrimSpace(string(output)))
 		os.Exit(4)
 	}
 }
