@@ -14,7 +14,14 @@ import (
 func main() {
 	var usePreRelease = flag.Bool("pre", false, "Support creating pre release versions")
 	var noPush = flag.Bool("no-push", false, "Do not push tag after tagging")
+	var prefix = flag.String("prefix", "", "Only consider version tags with this prefix, e.g. \"v\" (use -prefix= for no prefix)")
 	flag.Parse()
+	prefixSet := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "prefix" {
+			prefixSet = true
+		}
+	})
 
 	git.GitInstalled()
 	branch := git.CurrentBranch()
@@ -33,13 +40,14 @@ func main() {
 			return
 		}
 	}
-	ver, hasTags := git.GetLastVersion()
+	ver, hasTags := git.GetLastVersion(*prefix, prefixSet)
 	if !hasTags {
 		fmt.Println("is not tagged")
 		ver = versioninfo.VersionInfo{
-			Major: 0,
-			Minor: 0,
-			Patch: 0,
+			Prefix: *prefix,
+			Major:  0,
+			Minor:  0,
+			Patch:  0,
 		}
 	}
 	fmt.Printf("Currently on %s\n", ver.String())
