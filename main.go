@@ -14,6 +14,8 @@ import (
 func main() {
 	var usePreRelease = flag.Bool("pre", false, "Support creating pre release versions")
 	var noPush = flag.Bool("no-push", false, "Do not push tag after tagging")
+	var annotate = flag.Bool("annotate", false, "Create an annotated tag")
+	var sign = flag.Bool("sign", false, "Create a signed tag (implies -annotate); uses git's signing configuration")
 	var prefix = flag.String("prefix", "", "Only consider version tags with this prefix, e.g. \"v\" (use -prefix= for no prefix)")
 	flag.Parse()
 	prefixSet := false
@@ -77,15 +79,21 @@ func main() {
 	if len(ver.Build) > 0 {
 		ver.Build = git.GetSha()
 	}
+	tagKind := git.Lightweight
+	if *sign {
+		tagKind = git.Signed
+	} else if *annotate {
+		tagKind = git.Annotated
+	}
 	if *noPush {
-		git.Tag(ver)
+		git.Tag(ver, tagKind)
 		fmt.Printf("Tagged %s\n", ver.String())
 	} else {
 		pushAnswer := utils.YesNo(fmt.Sprintf("Tag and push %s?", ver.String()), choice.Yes)
 		if pushAnswer != choice.Yes {
 			return
 		}
-		git.Tag(ver)
+		git.Tag(ver, tagKind)
 		git.PushTag(ver)
 		fmt.Printf("Pushed %s\n", ver.String())
 	}

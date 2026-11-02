@@ -69,17 +69,34 @@ func GetSha() string {
 	return strings.TrimSpace(string(output))
 }
 
+// TagKind selects what kind of tag Tag creates.
+type TagKind int
+
+const (
+	Lightweight TagKind = iota
+	Annotated
+	Signed
+)
+
 // tagArgs builds the arguments for creating a tag. The "--" ensures the tag
 // name is never interpreted as an option, even if it starts with "-".
-func tagArgs(version versioninfo.VersionInfo) []string {
-	return []string{"tag", "--", version.String()}
+func tagArgs(version versioninfo.VersionInfo, kind TagKind) []string {
+	name := version.String()
+	args := []string{"tag"}
+	switch kind {
+	case Annotated:
+		args = append(args, "-a", "-m", name)
+	case Signed:
+		args = append(args, "-s", "-m", name)
+	}
+	return append(args, "--", name)
 }
 
-func Tag(version versioninfo.VersionInfo) {
-	cmd := exec.Command("git", tagArgs(version)...)
-	_, err := cmd.Output()
+func Tag(version versioninfo.VersionInfo, kind TagKind) {
+	cmd := exec.Command("git", tagArgs(version, kind)...)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Could not tag version")
+		fmt.Printf("Could not tag version: %s\n", strings.TrimSpace(string(output)))
 		os.Exit(3)
 	}
 }
