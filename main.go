@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/stssk/git-bump/git"
 	"github.com/stssk/git-bump/utils"
@@ -16,6 +17,7 @@ func main() {
 	var noPush = flag.Bool("no-push", false, "Do not push tag after tagging")
 	var annotate = flag.Bool("annotate", false, "Create an annotated tag")
 	var sign = flag.Bool("sign", false, "Create a signed tag (implies -annotate); uses git's signing configuration")
+	var remoteFlag = flag.String("remote", "", "Remote to push the tag to (default: the current branch's push remote)")
 	var prefix = flag.String("prefix", "", "Only consider version tags with this prefix, e.g. \"v\" (use -prefix= for no prefix)")
 	flag.Parse()
 	prefixSet := false
@@ -89,12 +91,17 @@ func main() {
 		git.Tag(ver, tagKind)
 		fmt.Printf("Tagged %s\n", ver.String())
 	} else {
-		pushAnswer := utils.YesNo(fmt.Sprintf("Tag and push %s?", ver.String()), choice.Yes)
+		remote, err := git.PushRemote(branch, *remoteFlag)
+		if err != nil {
+			fmt.Printf("Could not determine remote: %s\n", err)
+			os.Exit(3)
+		}
+		pushAnswer := utils.YesNo(fmt.Sprintf("Tag and push %s to %s?", ver.String(), remote), choice.Yes)
 		if pushAnswer != choice.Yes {
 			return
 		}
 		git.Tag(ver, tagKind)
-		git.PushTag(ver)
-		fmt.Printf("Pushed %s\n", ver.String())
+		git.PushTag(ver, remote)
+		fmt.Printf("Pushed %s to %s\n", ver.String(), remote)
 	}
 }
