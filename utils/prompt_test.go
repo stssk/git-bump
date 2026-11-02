@@ -8,9 +8,10 @@ import (
 )
 
 type fakePrompter struct {
-	selects []int
-	err     error
-	shown   [][]string
+	selects  []int
+	confirms []bool
+	err      error
+	shown    [][]string
 }
 
 func (f *fakePrompter) Select(_ string, options []string) (int, error) {
@@ -21,6 +22,15 @@ func (f *fakePrompter) Select(_ string, options []string) (int, error) {
 	i := f.selects[0]
 	f.selects = f.selects[1:]
 	return i, nil
+}
+
+func (f *fakePrompter) Confirm(string, bool) (bool, error) {
+	if f.err != nil {
+		return false, f.err
+	}
+	b := f.confirms[0]
+	f.confirms = f.confirms[1:]
+	return b, nil
 }
 
 func TestAskForOperation(t *testing.T) {

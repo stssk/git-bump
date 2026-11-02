@@ -8,7 +8,6 @@ import (
 
 	"github.com/stssk/git-bump/git"
 	"github.com/stssk/git-bump/utils"
-	"github.com/stssk/git-bump/utils/choice"
 	"github.com/stssk/git-bump/utils/operation"
 	"github.com/stssk/git-bump/versioninfo"
 )
@@ -29,19 +28,22 @@ func main() {
 	})
 
 	git.GitInstalled()
+	prompter := utils.NewPrompter()
 	branch := git.CurrentBranch()
 	if branch != "main" && branch != "master" {
 		question := fmt.Sprintf("Currently on branch %s. Continue?", branch)
-		cont := utils.YesNo(question, choice.No)
-		if cont != choice.Yes {
+		cont, err := prompter.Confirm(question, false)
+		exitOnPromptError(err)
+		if !cont {
 			return
 		}
 	}
 	currentTag := git.HeadTagged()
 	if currentTag != "" {
 		question := fmt.Sprintf("Current branch is tagged with %s. Continue?", currentTag)
-		cont := utils.YesNo(question, choice.No)
-		if cont != choice.Yes {
+		cont, err := prompter.Confirm(question, false)
+		exitOnPromptError(err)
+		if !cont {
 			return
 		}
 	}
@@ -56,7 +58,6 @@ func main() {
 		}
 	}
 	fmt.Printf("Currently on %s\n", ver.String())
-	prompter := utils.NewPrompter()
 	bumpWith, err := utils.AskForOperation(prompter, *usePreRelease)
 	exitOnPromptError(err)
 	switch bumpWith {
@@ -96,8 +97,9 @@ func main() {
 			fmt.Printf("Could not determine remote: %s\n", err)
 			os.Exit(3)
 		}
-		pushAnswer := utils.YesNo(fmt.Sprintf("Tag and push %s to %s?", ver.String(), remote), choice.Yes)
-		if pushAnswer != choice.Yes {
+		push, err := prompter.Confirm(fmt.Sprintf("Tag and push %s to %s?", ver.String(), remote), true)
+		exitOnPromptError(err)
+		if !push {
 			return
 		}
 		git.Tag(ver, tagKind)
