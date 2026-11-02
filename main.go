@@ -58,28 +58,8 @@ func main() {
 		}
 	}
 	fmt.Printf("Currently on %s\n", ver.String())
-	bumpWith, err := utils.AskForOperation(prompter, *usePreRelease)
+	ver, err := nextVersion(prompter, ver, *usePreRelease)
 	exitOnPromptError(err)
-	switch bumpWith {
-	case operation.PreRelease:
-		if len(ver.PreRelease) == 0 {
-			ver.Patch += 1
-		}
-		ver.PreRelease, err = utils.AskForPreReleaseVersion(prompter)
-		exitOnPromptError(err)
-	case operation.Patch:
-		ver.Patch += 1
-		ver.PreRelease = ""
-	case operation.Minor:
-		ver.Minor += 1
-		ver.Patch = 0
-		ver.PreRelease = ""
-	case operation.Major:
-		ver.Major += 1
-		ver.Minor = 0
-		ver.Patch = 0
-		ver.PreRelease = ""
-	}
 	if len(ver.Build) > 0 {
 		ver.Build = git.GetSha()
 	}
@@ -118,4 +98,35 @@ func exitOnPromptError(err error) {
 	}
 	fmt.Fprintln(os.Stderr, err)
 	os.Exit(1)
+}
+
+func nextVersion(p utils.Prompter, ver versioninfo.VersionInfo, allowPreRelease bool) (versioninfo.VersionInfo, error) {
+	bumpWith, err := utils.AskForOperation(p, allowPreRelease)
+	if err != nil {
+		return ver, err
+	}
+	switch bumpWith {
+	case operation.PreRelease:
+		preRelease, err := utils.AskForPreReleaseVersion(p)
+		if err != nil {
+			return ver, err
+		}
+		if len(ver.PreRelease) == 0 {
+			ver.Patch += 1
+		}
+		ver.PreRelease = preRelease
+	case operation.Patch:
+		ver.Patch += 1
+		ver.PreRelease = ""
+	case operation.Minor:
+		ver.Minor += 1
+		ver.Patch = 0
+		ver.PreRelease = ""
+	case operation.Major:
+		ver.Major += 1
+		ver.Minor = 0
+		ver.Patch = 0
+		ver.PreRelease = ""
+	}
+	return ver, nil
 }

@@ -2,8 +2,10 @@ package utils
 
 import (
 	"errors"
+	"os"
 
 	"charm.land/huh/v2"
+	"github.com/charmbracelet/x/term"
 )
 
 var ErrAborted = errors.New("aborted")
@@ -14,7 +16,12 @@ type Prompter interface {
 	Input(title string, validate func(string) error) (string, error)
 }
 
+// huh's own fallback for non-terminals answers with the default when input
+// ends, which would accept "Tag and push?" unattended.
 func NewPrompter() Prompter {
+	if os.Getenv("TERM") == "dumb" || !term.IsTerminal(os.Stdin.Fd()) {
+		return NewLinePrompter(os.Stdin, os.Stdout)
+	}
 	return huhPrompter{}
 }
 
