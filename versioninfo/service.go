@@ -1,6 +1,7 @@
 package versioninfo
 
 import (
+	"math"
 	"regexp"
 	"strconv"
 )
@@ -17,9 +18,12 @@ func ParseSemver(version string) (bool, VersionInfo) {
 
 	// Extracting components
 	prefix := matches[1]
-	major, _ := strconv.Atoi(matches[2])
-	minor, _ := strconv.Atoi(matches[3])
-	patch, _ := strconv.Atoi(matches[4])
+	major, okMajor := parseComponent(matches[2])
+	minor, okMinor := parseComponent(matches[3])
+	patch, okPatch := parseComponent(matches[4])
+	if !okMajor || !okMinor || !okPatch {
+		return false, VersionInfo{}
+	}
 	preRelease := matches[5]
 	build := matches[6]
 
@@ -31,4 +35,15 @@ func ParseSemver(version string) (bool, VersionInfo) {
 		PreRelease: preRelease,
 		Build:      build,
 	}
+}
+
+// parseComponent parses a major/minor/patch number. Values that do not fit in
+// an int are rejected, as is math.MaxInt itself, so that every accepted
+// component can be incremented without overflowing into a negative number.
+func parseComponent(s string) (int, bool) {
+	n, err := strconv.Atoi(s)
+	if err != nil || n == math.MaxInt {
+		return 0, false
+	}
+	return n, true
 }
