@@ -2,10 +2,7 @@
 package utils
 
 import (
-	"bufio"
-	"fmt"
-	"io"
-	"os"
+	"errors"
 	"regexp"
 	"strings"
 
@@ -34,25 +31,14 @@ func ValidPreRelease(s string) bool {
 	return preReleaseRegex.MatchString(s)
 }
 
-func AskForPreReleaseVersion() string {
-	preRelease, err := readPreRelease(bufio.NewReader(os.Stdin), os.Stdout)
-	if err != nil {
-		os.Exit(3)
-	}
-	return preRelease
+func AskForPreReleaseVersion(p Prompter) (string, error) {
+	answer, err := p.Input("Pre release version", validatePreRelease)
+	return strings.TrimSpace(answer), err
 }
 
-func readPreRelease(r *bufio.Reader, w io.Writer) (string, error) {
-	for {
-		fmt.Fprint(w, "Pre release version:")
-		line, err := r.ReadString('\n')
-		trimmed := strings.TrimSpace(line)
-		if ValidPreRelease(trimmed) {
-			return trimmed, nil
-		}
-		if err != nil {
-			return "", err
-		}
-		fmt.Fprintln(w, "Not a valid pre release version")
+func validatePreRelease(s string) error {
+	if !ValidPreRelease(strings.TrimSpace(s)) {
+		return errors.New("not a valid pre release version")
 	}
+	return nil
 }

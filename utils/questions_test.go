@@ -1,9 +1,8 @@
 package utils
 
 import (
-	"bufio"
-	"io"
-	"strings"
+	"errors"
+	"slices"
 	"testing"
 
 	"github.com/stssk/git-bump/versioninfo"
@@ -37,31 +36,23 @@ func TestValidPreReleaseRoundTrips(t *testing.T) {
 	}
 }
 
-func TestReadPreReleaseRepromptsUntilValid(t *testing.T) {
-	in := bufio.NewReader(strings.NewReader("rc 1\nx:refs/heads/main\n\nrc.1\n"))
-	var out strings.Builder
-	got, err := readPreRelease(in, &out)
+func TestAskForPreReleaseVersionValidates(t *testing.T) {
+	p := &fakePrompter{inputs: []string{"rc 1", "x:refs/heads/main", "", " rc.1 "}}
+	got, err := AskForPreReleaseVersion(p)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if got != "rc.1" {
 		t.Fatalf("got %q, want rc.1", got)
 	}
-	if n := strings.Count(out.String(), "Not a valid pre release version"); n != 3 {
-		t.Fatalf("rejections = %d, want 3; output:\n%s", n, out.String())
+	if want := []string{"rc 1", "x:refs/heads/main", ""}; !slices.Equal(p.rejected, want) {
+		t.Fatalf("rejected %q, want %q", p.rejected, want)
 	}
 }
 
-func TestReadPreReleaseAcceptsLastLineWithoutNewline(t *testing.T) {
-	got, err := readPreRelease(bufio.NewReader(strings.NewReader("rc.2")), io.Discard)
-	if err != nil || got != "rc.2" {
-		t.Fatalf("got %q, %v; want rc.2, nil", got, err)
-	}
-}
-
-func TestReadPreReleaseStopsAtEOF(t *testing.T) {
-	_, err := readPreRelease(bufio.NewReader(strings.NewReader("bad input\n")), io.Discard)
-	if err != io.EOF {
-		t.Fatalf("err = %v, want io.EOF", err)
+func TestAskForPreReleaseVersionReturnsAbort(t *testing.T) {
+	_, err := AskForPreReleaseVersion(&fakePrompter{err: ErrAborted})
+	if !errors.Is(err, ErrAborted) {
+		t.Fatalf("err = %v, want ErrAborted", err)
 	}
 }

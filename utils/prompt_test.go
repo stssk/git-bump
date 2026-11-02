@@ -10,6 +10,8 @@ import (
 type fakePrompter struct {
 	selects  []int
 	confirms []bool
+	inputs   []string
+	rejected []string
 	err      error
 	shown    [][]string
 }
@@ -31,6 +33,21 @@ func (f *fakePrompter) Confirm(string, bool) (bool, error) {
 	b := f.confirms[0]
 	f.confirms = f.confirms[1:]
 	return b, nil
+}
+
+func (f *fakePrompter) Input(_ string, validate func(string) error) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
+	for len(f.inputs) > 0 {
+		s := f.inputs[0]
+		f.inputs = f.inputs[1:]
+		if validate(s) == nil {
+			return s, nil
+		}
+		f.rejected = append(f.rejected, s)
+	}
+	return "", errors.New("fakePrompter: out of inputs")
 }
 
 func TestAskForOperation(t *testing.T) {
