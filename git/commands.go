@@ -79,8 +79,14 @@ func GetSha() string {
 	return strings.TrimSpace(string(output))
 }
 
+// tagArgs builds the arguments for creating a tag. The "--" ensures the tag
+// name is never interpreted as an option, even if it starts with "-".
+func tagArgs(version versioninfo.VersionInfo) []string {
+	return []string{"tag", "--", version.String()}
+}
+
 func Tag(version versioninfo.VersionInfo) {
-	cmd := exec.Command("git", "tag", version.String())
+	cmd := exec.Command("git", tagArgs(version)...)
 	_, err := cmd.Output()
 	if err != nil {
 		fmt.Println("Could not tag version")
