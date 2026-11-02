@@ -1,7 +1,10 @@
 package git
 
 import (
+	"os"
 	"os/exec"
+	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -34,24 +37,75 @@ func run(t *testing.T, args ...string) string {
 
 func TestTagArgsSeparateNameFromOptions(t *testing.T) {
 	// A version that would start with "-" must still come after "--".
-	args := tagArgs(versioninfo.VersionInfo{Major: -1})
-	sep := -1
-	for i, a := range args {
-		if a == "--" {
-			sep = i
+	v := versioninfo.VersionInfo{Major: -1}
+	for _, kind := range []TagKind{Lightweight, Annotated, Signed} {
+		args := tagArgs(v, kind)
+		sep := slices.Index(args, "--")
+		if sep < 0 || sep != len(args)-2 || args[len(args)-1] != "-1.0.0" {
+			t.Errorf("kind %d: tag name not placed right after \"--\": %q", kind, args)
 		}
-	}
-	if sep < 0 || args[len(args)-1] != "-1.0.0" || sep > len(args)-2 {
-		t.Fatalf("tag name not placed after \"--\": %q", args)
 	}
 }
 
-func TestTagCreatesTag(t *testing.T) {
+func TestTagArgsKinds(t *testing.T) {
+	v := versioninfo.VersionInfo{Prefix: "v", Major: 1}
+	tests := map[TagKind][]string{
+		Lightweight: {"tag", "--", "v1.0.0"},
+		Annotated:   {"tag", "-a", "-m", "v1.0.0", "--", "v1.0.0"},
+		Signed:      {"tag", "-s", "-m", "v1.0.0", "--", "v1.0.0"},
+	}
+	for kind, want := range tests {
+		if got := tagArgs(v, kind); !slices.Equal(got, want) {
+			t.Errorf("kind %d: got %q, want %q", kind, got, want)
+		}
+	}
+}
+
+func TestTagCreatesLightweightTag(t *testing.T) {
 	newRepo(t)
-	Tag(versioninfo.VersionInfo{Prefix: "v", Major: 1, Minor: 2, Patch: 3})
+	Tag(versioninfo.VersionInfo{Prefix: "v", Major: 1, Minor: 2, Patch: 3}, Lightweight)
 	if got := run(t, "tag", "--list"); got != "v1.2.3" {
 		t.Fatalf("tags = %q, want v1.2.3", got)
 	}
+	if got := run(t, "cat-file", "-t", "v1.2.3"); got != "commit" {
+		t.Fatalf("object type = %q, want commit (lightweight)", got)
+	}
+}
+
+func TestTagCreatesAnnotatedTag(t *testing.T) {
+	newRepo(t)
+	Tag(versioninfo.VersionInfo{Prefix: "v", Major: 2}, Annotated)
+	if got := run(t, "cat-file", "-t", "v2.0.0"); got != "tag" {
+		t.Fatalf("object type = %q, want tag (annotated)", got)
+	}
+	if got := run(t, "tag", "-l", "--format=%(contents:subject)", "v2.0.0"); got != "v2.0.0" {
+		t.Fatalf("tag message = %q, want v2.0.0", got)
+	}
+}
+
+func TestTagCreatesSignedTag(t *testing.T) {
+	if _, err := exec.LookPath("ssh-keygen"); err != nil {
+		t.Skip("ssh-keygen not available")
+	}
+	dir := newRepo(t)
+	key := filepath.Join(t.TempDir(), "key")
+	if out, err := exec.Command("ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "test", "-f", key).CombinedOutput(); err != nil {
+		t.Fatalf("ssh-keygen: %v\n%s", err, out)
+	}
+	pub, err := os.ReadFile(key + ".pub")
+	if err != nil {
+		t.Fatal(err)
+	}
+	allowed := filepath.Join(dir, ".git", "allowed_signers")
+	if err := os.WriteFile(allowed, []byte("test@example.com "+string(pub)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	run(t, "config", "gpg.format", "ssh")
+	run(t, "config", "user.signingkey", key)
+	run(t, "config", "gpg.ssh.allowedSignersFile", allowed)
+
+	Tag(versioninfo.VersionInfo{Prefix: "v", Major: 3}, Signed)
+	run(t, "tag", "-v", "v3.0.0") // fails the test if the signature does not verify
 }
 
 func TestGetLastVersionIgnoresTagsOutsideHistory(t *testing.T) {
